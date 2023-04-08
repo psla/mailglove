@@ -1,3 +1,3 @@
 #!/bin/bash
 
-docker build -t thingless/mailglove .
+docker build -t psla/mailglove .

@@ -6,7 +6,7 @@ if [[ -a /etc/supervisor/conf.d/supervisord.conf ]]; then
 fi
 
 #supervisor
-cat > /etc/supervisor/conf.d/supervisord.conf <<EOF
+cat >> /etc/supervisord.conf <<EOF
 [supervisord]
 nodaemon=true
 
@@ -21,8 +21,8 @@ EOF
 #  postfix
 ############
 cat >> /opt/postfix.sh <<EOF
-#!/bin/bash
-service postfix start
+#!/bin/sh
+/usr/sbin/postfix start
 tail -f /var/log/mail.log
 EOF
 chmod +x /opt/postfix.sh
@@ -35,8 +35,23 @@ myhook unix - n n - - pipe
     flags=F user=nobody argv=/opt/webhook.js ${recipient} ${sender} ${size}
 EOF
 
-# Make SMTP use myhook
-postconf -F 'smtp/inet/command = smtpd -o content_filter=myhook:dummy'
+# https://serverfault.com/questions/258469/how-to-configure-postfix-to-pipe-all-incoming-email-to-a-script
+tee -a /etc/postfix/virtual_aliases <<EOF
+@$DOMAIN    allmail@apimail.budget.usa.sepio.pl
+EOF
+
+tee -a /etc/postfix/transport <<EOF
+$DOMAIN    myhook:
+EOF
+
+postmap /etc/postfix/virtual_aliases
+postmap /etc/postfix/transport
+
+# 
+# virtual_alias_maps = lmdb:/etc/postfix/virtual_aliases
+# transport_maps = lmdb:/etc/postfix/transport
+postconf 'transport_maps = lmdb:/etc/postfix/transport'
+postconf 'virtual_alias_maps = lmdb:/etc/postfix/virtual_aliases'
 
 # Disable bounces
 postconf -F 'bounce/unix/command = discard'

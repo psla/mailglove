@@ -35,6 +35,18 @@ myhook unix - n n - - pipe
     flags=F user=nobody argv=/opt/webhook.js ${recipient} ${sender} ${size}
 EOF
 
+echo "TLS enabled: ${TLS}"
+
+if [ "$TLS" == "true" ]
+then
+echo "Enabling TLS"
+tee -a /etc/postfix/main.cf <<'EOF'
+smtpd_tls_cert_file=/etc/postfix/ssl/server.csr
+smtpd_tls_key_file=/etc/postfix/ssl/server.key
+smtpd_tls_security_level=may
+EOF
+fi
+
 # https://serverfault.com/questions/258469/how-to-configure-postfix-to-pipe-all-incoming-email-to-a-script
 tee -a /etc/postfix/virtual_aliases <<EOF
 @$DOMAIN    allmail@apimail.budget.usa.sepio.pl

@@ -51,6 +51,7 @@ if (envelopeSize <= MAX_SIZE) {
         })
         .catch(err=>{
             console.error(err);
+	    throw err; // Throw error code so that mail stays in postqueue for re-delivery
         })
 }
 else {
